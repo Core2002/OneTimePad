@@ -2,6 +2,7 @@ package fun.fifu.onetimepad.controller;
 
 import cn.hutool.core.util.HexUtil;
 import fun.fifu.onetimepad.collection.FullBinaryTree;
+import fun.fifu.onetimepad.pojo.PadUnit;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -22,6 +23,13 @@ public class OneTimePadController {
     @RequestMapping("/")
     public String hello(String plainText, Integer groupNumber) {
         byte[][] encryption = encryption(plainText, groupNumber);
+
+        PadUnit pu = new PadUnit();
+        pu.setEncryptionType("一次一密");
+        pu.setPlaintext(plainText);
+        pu.setKeyGroup(encryption);
+        mongoTemplate.insert(pu);
+
         return String.format("明文是：%s<br>组数是：%s<br>密钥组是：<br>%s<br>解密后为：%s",
                 plainText,
                 groupNumber,
