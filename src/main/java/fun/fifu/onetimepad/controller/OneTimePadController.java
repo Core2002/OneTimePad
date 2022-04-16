@@ -1,41 +1,49 @@
 package fun.fifu.onetimepad.controller;
 
 import cn.hutool.core.util.HexUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import fun.fifu.onetimepad.collection.FullBinaryTree;
 import fun.fifu.onetimepad.pojo.PadUnit;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.List;
 
 @RestController
 public class OneTimePadController {
     static SecureRandom secureRandom = new SecureRandom(SecureRandom.getSeed(4096));
 
+    public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
     @Resource
     private MongoTemplate mongoTemplate;
 
-    @RequestMapping("/")
-    public String hello(String plainText, Integer groupNumber) {
+    @PostMapping("/api/encryption")
+    public PadUnit encryptionApi(String plainText, Integer groupNumber) {
         byte[][] encryption = encryption(plainText, groupNumber);
+        PadUnit padUnit = new PadUnit();
+        padUnit.setEncryptionType("一次一密");
+        padUnit.setPlaintext(plainText);
+        padUnit.setKeyGroup(encryption);
+        mongoTemplate.insert(padUnit);
+        return padUnit;
+    }
 
-        PadUnit pu = new PadUnit();
-        pu.setEncryptionType("一次一密");
-        pu.setPlaintext(plainText);
-        pu.setKeyGroup(encryption);
-        mongoTemplate.insert(pu);
-
-        return String.format("明文是：%s<br>组数是：%s<br>密钥组是：<br>%s<br>解密后为：%s",
-                plainText,
-                groupNumber,
-                arrayToString(encryption),
-                new String(decryption(encryption), StandardCharsets.UTF_8)
-        );
+    @PostMapping("/api/decryption")
+    public String decryptionApi(String hexKeyGroupJson) {
+        List<String> keyStringList = gson.fromJson(hexKeyGroupJson, List.class);
+        byte[][] keys = new byte[keyStringList.size()][];
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = HexUtil.decodeHex(keyStringList.get(i));
+        }
+        return new String(decryption(keys));
     }
 
     /**

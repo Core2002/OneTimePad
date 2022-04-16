@@ -1,6 +1,5 @@
 package fun.fifu.onetimepad;
 
-import com.google.gson.Gson;
 import fun.fifu.onetimepad.collection.FullBinaryTree;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
