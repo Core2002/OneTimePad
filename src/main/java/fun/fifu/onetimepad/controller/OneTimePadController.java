@@ -3,6 +3,7 @@ package fun.fifu.onetimepad.controller;
 import cn.hutool.core.util.HexUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import fun.fifu.onetimepad.collection.FullBinaryTree;
 import fun.fifu.onetimepad.pojo.PadUnit;
 import io.vavr.Tuple;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.List;
 
 @RestController
 public class OneTimePadController {
@@ -32,16 +32,17 @@ public class OneTimePadController {
         padUnit.setEncryptionType("一次一密");
         padUnit.setPlaintext(plainText);
         padUnit.setKeyGroup(encryption);
+        padUnit.setKeyGroupText(arrayToJsonArray(encryption));
         mongoTemplate.insert(padUnit);
         return padUnit;
     }
 
     @PostMapping("/api/decryption")
     public String decryptionApi(String hexKeyGroupJson) {
-        List<String> keyStringList = gson.fromJson(hexKeyGroupJson, List.class);
+        JsonArray keyStringList = gson.fromJson(hexKeyGroupJson, JsonArray.class);
         byte[][] keys = new byte[keyStringList.size()][];
         for (int i = 0; i < keys.length; i++) {
-            keys[i] = HexUtil.decodeHex(keyStringList.get(i));
+            keys[i] = HexUtil.decodeHex(keyStringList.get(i).getAsString());
         }
         return new String(decryption(keys));
     }
@@ -136,13 +137,10 @@ public class OneTimePadController {
         return plain;
     }
 
-    public String arrayToString(byte[][] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte[] aByte : bytes) {
-            sb.append(HexUtil.encodeHexStr(aByte));
-            sb.append("\n<br>\n");
-        }
-        return sb.toString();
+    public String arrayToJsonArray(byte[][] bytes) {
+        var jsonArray = new JsonArray();
+        for (byte[] aByte : bytes) jsonArray.add(HexUtil.encodeHexStr(aByte));
+        return gson.toJson(jsonArray);
     }
 
 }

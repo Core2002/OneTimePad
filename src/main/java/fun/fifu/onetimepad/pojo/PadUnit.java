@@ -7,4 +7,5 @@ public class PadUnit {
     String encryptionType;
     String plaintext;
     byte[][] keyGroup;
+    String keyGroupText;
 }
